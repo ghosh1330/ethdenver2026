@@ -64,7 +64,7 @@ contract AdiInvoice is Ownable {
     ) external returns (uint256 invoiceId) {
         require(merchant != address(0), "AdiInvoice: zero merchant");
         require(fiatAmountMinor > 0,   "AdiInvoice: zero amount");
-        oracle.getQuote(fiatAmountMinor, currency);
+        // oracle.getQuote(fiatAmountMinor, currency);  ← ❌ REMOVED (BUG FIX)
 
         invoiceId = nextInvoiceId++;
         invoices[invoiceId] = Invoice({
