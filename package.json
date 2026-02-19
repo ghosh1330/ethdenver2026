@@ -1,0 +1,24 @@
+{
+  "name": "threadhunt-pay-contracts",
+  "version": "1.0.0",
+  "description": "ThreadHunt Pay – Hardhat smart contracts for ADI Payments Component",
+  "private": true,
+  "scripts": {
+    "compile": "hardhat compile",
+    "test": "hardhat test",
+    "node": "hardhat node",
+    "deploy:local": "hardhat run script/deploy.js --network localhost",
+    "deploy:testnet": "hardhat run script/deploy.js --network adiTestnet",
+    "demo:local": "hardhat run script/demo.js --network localhost",
+    "demo:testnet": "hardhat run script/demo.js --network adiTestnet",
+    "update-rates:local": "hardhat run script/updateRates.js --network localhost"
+  },
+  "devDependencies": {
+    "@nomicfoundation/hardhat-toolbox": "^4.0.0",
+    "hardhat": "^2.22.0",
+    "dotenv": "^16.4.5"
+  },
+  "dependencies": {
+    "@openzeppelin/contracts": "^5.0.2"
+  }
+}
