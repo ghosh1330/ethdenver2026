@@ -89,8 +89,20 @@ body {
 }
 .tag.active { background: var(--purple); color: white; border-color: var(--purple); }
 
-.xp-bar-track { height: 8px; border-radius: 4px; background: #E9D8FD; overflow: hidden; }
-.xp-bar-fill  { height: 100%; border-radius: 4px; background: var(--purple); }
+.xp-bar-track { 
+  height: 8px; 
+  border-radius: 4px; 
+  background: #E9D8FD; 
+  overflow: hidden;
+  display: block; /* ✅ ADD THIS */
+}
+.xp-bar-fill { 
+  height: 100%; 
+  border-radius: 4px; 
+  background: var(--purple);
+  display: block; /* ✅ ADD THIS */
+}
+
 
 @keyframes float {
   0%, 100% { transform: translateY(0px); }

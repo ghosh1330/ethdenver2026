@@ -1,6 +1,7 @@
 'use client'
 import { useState, useEffect, useCallback } from 'react'
 import { Contract } from 'ethers'
+import { JsonRpcProvider } from 'ethers'
 import { useWallet } from '@/lib/wallet'
 import { CONTRACTS, INVOICE_ABI, ORACLE_ABI, ERC20_ABI, formatFiat, formatAdi, decodeCurrency, CURRENCY_LABELS, RPC_URL } from '@/lib/contracts'
 
@@ -25,7 +26,6 @@ export default function AdiCheckout({ invoiceId }: { invoiceId: string }) {
   const loadInvoice = useCallback(async () => {
     setStep('loading')
     try {
-      const { JsonRpcProvider } = await import('ethers')
       const provider = new JsonRpcProvider(RPC_URL)
       const contract = new Contract(CONTRACTS.ADI_INVOICE, INVOICE_ABI, provider)
       const inv = await contract.getInvoice(BigInt(invoiceId))
@@ -42,23 +42,31 @@ export default function AdiCheckout({ invoiceId }: { invoiceId: string }) {
   useEffect(() => { loadInvoice() }, [loadInvoice])
 
   const handlePay = async () => {
-    if (!signer || !invoice) return
-    setErrMsg('')
-    try {
-      setStep('approving')
-      const token = new Contract(CONTRACTS.ADI_TOKEN, ERC20_ABI, signer)
-      await (await token.approve(CONTRACTS.ADI_INVOICE, invoice.adiAmount)).wait()
-      setStep('paying')
-      const inv = new Contract(CONTRACTS.ADI_INVOICE, INVOICE_ABI, signer)
-      const tx = await inv.payInvoice(BigInt(invoiceId))
-      const receipt = await tx.wait()
-      setTxHash(receipt.hash)
-      setStep('success')
-    } catch (e: any) {
-      setErrMsg(e.message?.slice(0, 120) ?? 'Transaction failed')
-      setStep('ready')
+  if (!signer || !invoice || !address) return
+  setErrMsg('')
+  try {
+    setStep('approving')
+    const token = new Contract(CONTRACTS.ADI_TOKEN, ERC20_ABI, signer)
+    
+    // ✅ CHECK ALLOWANCE FIRST
+    const allowance = await token.allowance(address, CONTRACTS.ADI_INVOICE)
+    if (Number(allowance) < Number(invoice.adiAmount)) {
+      const approveTx = await token.approve(CONTRACTS.ADI_INVOICE, invoice.adiAmount)
+      await approveTx.wait()
     }
+    
+    setStep('paying')
+    const inv = new Contract(CONTRACTS.ADI_INVOICE, INVOICE_ABI, signer)
+    const tx = await inv.payInvoice(BigInt(invoiceId))
+    const receipt = await tx.wait()
+    setTxHash(receipt.hash)
+    setStep('success')
+  } catch (e: any) {
+    setErrMsg(e.message?.slice(0, 120) ?? 'Transaction failed')
+    setStep('ready')
   }
+}
+
 
   if (step === 'success') return (
     <div style={{ padding: 24, textAlign: 'center' }}>
