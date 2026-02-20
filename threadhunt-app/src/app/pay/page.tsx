@@ -18,14 +18,16 @@ export default function PayPage({ params }: { params: { invoiceId: string } }) {
   const product = PRODUCTS[params.invoiceId]
 
   if (!product) {
-    return (
-      <div style={{ padding: 40, textAlign: 'center' }}>
-        <div style={{ fontSize: 48, marginBottom: 16 }}>🔍</div>
-        <h2 className="font-display" style={{ fontSize: 20, fontWeight: 700 }}>Item not found</h2>
-        <Link href="/"><button className="btn-purple" style={{ marginTop: 20 }}>Back to Home</button></Link>
-      </div>
-    )
-  }
+  return (
+    <div style={{ padding: 40, textAlign: 'center' }}>
+      <div style={{ fontSize: 48, marginBottom: 16 }}>🔍</div>
+      <h2 className="font-display" style={{ fontSize: 20, fontWeight: 700 }}>Item not found</h2>
+      <p style={{ color: '#666', fontSize: 14 }}>Invoice ID: {params.invoiceId}</p> {/* ✅ ADD THIS */}
+      <Link href="/"><button className="btn-purple" style={{ marginTop: 20 }}>Back to Home</button></Link>
+    </div>
+  )
+}
+
 
   if (view === 'checkout') {
     return (

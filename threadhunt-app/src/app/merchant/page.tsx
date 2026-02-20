@@ -70,7 +70,6 @@ export default function MerchantPage() {
       <div style={{ padding: '20px 20px 0', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <div className="th-logo">TH</div>
         <span className="font-display" style={{ fontWeight: 800, fontSize: 18 }}>ThreadHunt</span>
-        <button onClick={() => loadDashboard(address)} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 18 }}>🔄</button>
       </div>
 
       <div style={{ padding: '20px 20px 0' }}>
