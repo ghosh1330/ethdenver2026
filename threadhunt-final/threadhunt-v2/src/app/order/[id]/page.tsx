@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation'
 import { useWallet } from '@/lib/wallet'
 import { CONTRACTS, INVOICE_ABI, ERC20_ABI, formatAdi, RPC_URL } from '@/lib/contracts'
 import BottomNav from '@/components/BottomNav'
+import Logo from '@/components/Logo'
 import QRCode from '@/components/QRCode'
 
 const PRODUCTS: Record<string, { title: string; price: number; currency: string; location: string; seller: string; img: string; origin: string }> = {
@@ -29,32 +30,30 @@ export default function OrderPage({ params }: { params: { id: string } }) {
   const [payMethod, setPayMethod] = useState<PayMethod>('wallet')
   const [errMsg, setErrMsg]       = useState('')
   const [tokenId, setTokenId]     = useState<string | null>(null)
-  const [adiQuote, setAdiQuote]   = useState<bigint>(0n)
+  const [adiQuote, setAdiQuote]   = useState<string>('0')
 
   const total      = (product?.price ?? 0) + SHIPPING_FEE + PLATFORM_FEE
-  const totalMinor = BigInt(total * 100)
+  const totalMinor = total * 100
 
-  const qrValue = adiQuote > 0n
-    ? `ethereum:${CONTRACTS.ADI_TOKEN}/transfer?address=${CONTRACTS.ADI_INVOICE}&uint256=${adiQuote.toString()}`
+  const qrValue = adiQuote !== '0'
+    ? `ethereum:${CONTRACTS.ADI_TOKEN}/transfer?address=${CONTRACTS.ADI_INVOICE}&uint256=${adiQuote}`
     : CONTRACTS.ADI_INVOICE
 
   useEffect(() => {
     if (!product) return
     async function getQuote() {
       try {
-        const { JsonRpcProvider, Contract } = await import('ethers')
+        const { JsonRpcProvider, Contract, ethers: eth } = await import('ethers')
         const { ORACLE_ABI } = await import('@/lib/contracts')
         const provider = new JsonRpcProvider(RPC_URL)
         const oracle   = new Contract(CONTRACTS.ORACLE_ADAPTER, ORACLE_ABI, provider)
-        const currency = product.currency === 'AED'
-          ? '0x4145440000000000000000000000000000000000000000000000000000000000'
-          : '0x5553440000000000000000000000000000000000000000000000000000000000'
-        const quote = await oracle.getQuote(totalMinor, currency)
-        setAdiQuote(quote)
+        const currency = eth.encodeBytes32String(product.currency)
+        const quote    = await oracle.getQuote(totalMinor, currency)
+        setAdiQuote(quote.toString())
       } catch {}
     }
     getQuote()
-  }, [product, totalMinor])
+  }, [product])
 
   if (!product) return <div style={{ padding: 40, textAlign: 'center' }}>Not found</div>
 
@@ -63,11 +62,9 @@ export default function OrderPage({ params }: { params: { id: string } }) {
     if (!signer) return
     setErrMsg('')
     try {
-      const { Contract } = await import('ethers')
+      const { Contract, ethers: eth } = await import('ethers')
       setStep('approving')
-      const currency = product.currency === 'AED'
-        ? '0x4145440000000000000000000000000000000000000000000000000000000000'
-        : '0x5553440000000000000000000000000000000000000000000000000000000000'
+      const currency        = eth.encodeBytes32String(product.currency)
       const invoiceContract = new Contract(CONTRACTS.ADI_INVOICE, INVOICE_ABI, signer)
       const createTx        = await invoiceContract.createInvoice(address, totalMinor, currency, 0)
       const createReceipt   = await createTx.wait()
@@ -78,8 +75,9 @@ export default function OrderPage({ params }: { params: { id: string } }) {
           if (parsed?.name === 'InvoiceCreated') { invoiceId = parsed.args.invoiceId.toString(); break }
         } catch {}
       }
-      const [adiAmount] = await invoiceContract.quoteInvoice(invoiceId)
-      const token = new Contract(CONTRACTS.ADI_TOKEN, ERC20_ABI, signer)
+      const quoteResult = await invoiceContract.quoteInvoice(invoiceId)
+      const adiAmount   = quoteResult[0]
+      const token       = new Contract(CONTRACTS.ADI_TOKEN, ERC20_ABI, signer)
       await (await token.approve(CONTRACTS.ADI_INVOICE, adiAmount)).wait()
       setStep('paying')
       const payTx      = await invoiceContract.payInvoice(invoiceId, product.title, product.origin, 'Your Destination')
@@ -100,7 +98,7 @@ export default function OrderPage({ params }: { params: { id: string } }) {
   if (step === 'done') return (
     <div className="page fadein">
       <div style={{ padding: '20px 20px 0', display: 'flex', justifyContent: 'center' }}>
-        <div className="th-logo"><span className="th-logo-text">TH</span></div>
+        <Logo />
       </div>
       <div style={{ padding: 28, textAlign: 'center' }}>
         <div style={{ fontSize: 72, marginBottom: 16 }}>🎉</div>
@@ -134,12 +132,11 @@ export default function OrderPage({ params }: { params: { id: string } }) {
         <button onClick={() => router.back()} style={{ width: 38, height: 38, borderRadius: '50%', background: 'white', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 2px 8px rgba(0,0,0,0.1)' }}>
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--text)" strokeWidth="2.5"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
         </button>
-        <div className="th-logo" style={{ width: 44, height: 44 }}><span className="th-logo-text">TH</span></div>
+        <Logo size={44} />
         <h1 className="font-display" style={{ fontSize: 22, fontWeight: 700 }}>Order</h1>
       </div>
 
       <div style={{ padding: '0 20px' }}>
-        {/* Item details */}
         <div className="card" style={{ padding: 20, marginBottom: 16 }}>
           <h3 style={{ fontSize: 14, fontWeight: 700, color: 'var(--purple)', marginBottom: 14 }}>Item Details</h3>
           <div style={{ display: 'flex', gap: 14, marginBottom: 14 }}>
@@ -157,7 +154,6 @@ export default function OrderPage({ params }: { params: { id: string } }) {
           ))}
         </div>
 
-        {/* Price breakdown */}
         <div className="card" style={{ padding: 20, marginBottom: 16 }}>
           <h3 style={{ fontSize: 14, fontWeight: 700, color: 'var(--purple)', marginBottom: 14 }}>Price Breakdown</h3>
           {[['Item Price', `$${product.price} ${product.currency}`], ['Shipping', `$${SHIPPING_FEE} USD`], ['Platform Fee', `$${PLATFORM_FEE} USD`]].map(([k, v]) => (
@@ -170,12 +166,11 @@ export default function OrderPage({ params }: { params: { id: string } }) {
             <span style={{ fontSize: 16, fontWeight: 700, color: 'var(--purple)' }}>Total</span>
             <div style={{ textAlign: 'right' }}>
               <div style={{ fontSize: 16, fontWeight: 700, color: 'var(--purple)' }}>${total} {product.currency}</div>
-              {adiQuote > 0n && <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 2 }}>{formatAdi(adiQuote)}</div>}
+              {adiQuote !== '0' && <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 2 }}>{formatAdi(BigInt(adiQuote))}</div>}
             </div>
           </div>
         </div>
 
-        {/* Payment method toggle */}
         <div style={{ display: 'flex', background: 'rgba(91,63,166,0.08)', borderRadius: 14, padding: 4, marginBottom: 20, gap: 4 }}>
           {(['wallet', 'qr'] as PayMethod[]).map(m => (
             <button key={m} onClick={() => setPayMethod(m)} style={{
@@ -191,7 +186,6 @@ export default function OrderPage({ params }: { params: { id: string } }) {
           ))}
         </div>
 
-        {/* Wallet payment */}
         {payMethod === 'wallet' && (
           <div>
             <div style={{ background: 'rgba(91,63,166,0.06)', borderRadius: 14, padding: 14, marginBottom: 16, display: 'flex', gap: 10 }}>
@@ -217,23 +211,22 @@ export default function OrderPage({ params }: { params: { id: string } }) {
           </div>
         )}
 
-        {/* QR payment */}
         {payMethod === 'qr' && (
           <div style={{ textAlign: 'center' }}>
             <p style={{ fontSize: 14, color: 'var(--text-muted)', marginBottom: 20, lineHeight: 1.6 }}>
               Scan with your mobile wallet to pay in ADI. No browser extension needed.
             </p>
             <div style={{ marginBottom: 20 }}>
-              <QRCode value={qrValue} size={200} label={adiQuote > 0n ? `Send ${formatAdi(adiQuote)} to complete purchase` : 'Loading amount...'} />
+              <QRCode value={qrValue} size={200} label={adiQuote !== '0' ? `Send ${formatAdi(BigInt(adiQuote))} to complete purchase` : 'Loading amount...'} />
             </div>
             <div className="card" style={{ padding: 16, marginBottom: 16, textAlign: 'left' }}>
               <div style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 6, fontWeight: 600 }}>CONTRACT ADDRESS</div>
               <div style={{ fontSize: 11, fontFamily: 'monospace', wordBreak: 'break-all', color: 'var(--purple)', background: 'rgba(91,63,166,0.06)', padding: '8px 12px', borderRadius: 8 }}>{CONTRACTS.ADI_INVOICE}</div>
             </div>
-            {adiQuote > 0n && (
+            {adiQuote !== '0' && (
               <div className="card" style={{ padding: 16, marginBottom: 20, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <span style={{ fontSize: 14, color: 'var(--text-muted)' }}>Amount</span>
-                <span style={{ fontSize: 16, fontWeight: 700, color: 'var(--purple)' }}>{formatAdi(adiQuote)}</span>
+                <span style={{ fontSize: 16, fontWeight: 700, color: 'var(--purple)' }}>{formatAdi(BigInt(adiQuote))}</span>
               </div>
             )}
             <div style={{ background: 'rgba(91,63,166,0.06)', borderRadius: 14, padding: 14, display: 'flex', gap: 10, textAlign: 'left' }}>

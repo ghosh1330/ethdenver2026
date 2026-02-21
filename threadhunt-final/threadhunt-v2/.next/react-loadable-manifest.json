@@ -1,0 +1,22 @@
+{
+  "app/order/[id]/page.tsx -> @/lib/contracts": {
+    "id": "app/order/[id]/page.tsx -> @/lib/contracts",
+    "files": []
+  },
+  "app/order/[id]/page.tsx -> ethers": {
+    "id": "app/order/[id]/page.tsx -> ethers",
+    "files": [
+      "static/chunks/_app-pages-browser_node_modules_ethers_lib_esm_index_js.js"
+    ]
+  },
+  "app/track/[tokenId]/page.tsx -> @/lib/contracts": {
+    "id": "app/track/[tokenId]/page.tsx -> @/lib/contracts",
+    "files": []
+  },
+  "app/track/[tokenId]/page.tsx -> ethers": {
+    "id": "app/track/[tokenId]/page.tsx -> ethers",
+    "files": [
+      "static/chunks/_app-pages-browser_node_modules_ethers_lib_esm_index_js.js"
+    ]
+  }
+}
