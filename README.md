@@ -13,7 +13,7 @@ ThreadHunt Pay is a production-ready payment acceptance service for merchants on
 | Pillar | What it does |
 |--------|-------------|
 | **Global Payments** | Buyers in Nigeria, Brazil, Indonesia, Pakistan, ETC pay in ADI — no Visa/Mastercard restrictions |
-| **NFT Package Tracking** | Every purchase mints a ShipmentNFT as a digital twin of the package, tracked on-chain |
+| **NFT Package Tracking** | Every purchase mints a ShipmentNFT as a digital twin of the package, shipment updates are being stored on a digital ownership ledger with NFTS, which are binded by smart-contracts. |
 | **Escrow Protection** | ADI held in smart contract until buyer confirms delivery. Auto-refund after 30 days |
 
 ---
@@ -266,6 +266,9 @@ npx hardhat run script/deploy.js --network adiTestnet
 - **Frontend:** Next.js 14, TypeScript, ethers.js v6, Tailwind CSS
 - **Fonts:** Playfair Display + Outfit
 - **CLI:** Node.js, ethers.js v6
+- 
+
+##Used Claude, ChatGPT, Perplexity AIs in the assistance of this project.
 
 ---
 
